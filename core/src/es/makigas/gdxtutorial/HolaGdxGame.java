@@ -32,6 +32,7 @@ package es.makigas.gdxtutorial;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
@@ -46,7 +47,7 @@ import com.badlogic.gdx.graphics.g2d.*;
  * @author danirod
  */
 public class HolaGdxGame extends ApplicationAdapter {
-	
+
 	/**
 	 * El SpriteBatch es un objeto que usamos para enviar a la tarjeta
 	 * gráfica múltiples texturas a la vez. De este modo, hacemos un uso
@@ -56,23 +57,10 @@ public class HolaGdxGame extends ApplicationAdapter {
 	private SpriteBatch batch;
 	
 	/**
-	 * Crea una fuente que podemos utilizar para mostrar texto en pantalla.
-	 */
-	private BitmapFont font;
-	
-	/**
 	 * Sirve para almacenar una textura, que es una imagen que reside en la
 	 * tarjeta gráfica y que se puede mostrar en el juego para dibujar cosas.
 	 */
 	private Texture coche;
-	
-	/**
-	 * Un TextureRegion sirve para recortar texturas y mostrar sólo un
-	 * trozo de éstas. Así, por ejemplo, si hemos hecho que nuestras texturas
-	 * tengan tamaño potencia de 2 podemos recortar los bordes para tener el
-	 * trozo que nos interesa.
-	 */
-	private TextureRegion region;
 	
 	/**
 	 * Un Sprite sirve para guardar lo mismo que guardaríamos en un TextureRegion
@@ -81,6 +69,18 @@ public class HolaGdxGame extends ApplicationAdapter {
 	 */
 	private Sprite miCoche;
 	
+	/** Velocidad que lleva el coche. */
+	private float velocidad = 0;
+
+	/** Aceleración que lleva el coche. */
+	private float aceleracion = 0;
+	
+	/** Dónde debe desplazarse ahora el coche. */
+	private float objetivoX = 0;
+	
+	/** ¿El coche debe moverse porque hemos hecho clic? */
+	private boolean debeMoverse = false;
+
 	/**
 	 * El método create() es invocado cuando se crea el juego al abrir el programa
 	 * o tocar el icono en nuestro teléfono móvil. Deberíamos usar este método
@@ -90,19 +90,13 @@ public class HolaGdxGame extends ApplicationAdapter {
 	public void create () {
 		// Creamos algunas cosas sencillas...
 		batch = new SpriteBatch();
-		font = new BitmapFont();
-		
+				
 		// Para cargar una textura indicamos su ubicación en la carpeta assets/
 		coche = new Texture("coche.png");
-		
-		// Crear un TextureRegion es tan simple como decirle qué textura vamos
-		// a utilizar, y dónde debe meterle la tijera para recortar...
-		region = new TextureRegion(coche, 0, 0, 215, 83);
 		
 		// Con un Sprite podemos hacer más cosas que con un TextureRegion...
 		miCoche = new Sprite(coche, 0, 0, 215, 83);
 		miCoche.setPosition(50, 50); // le damos una posición en la pantalla
-		miCoche.rotate(45); // podemos hasta rotar la imagen que vamos a dibujar.
 	}
 
 	/**
@@ -113,28 +107,10 @@ public class HolaGdxGame extends ApplicationAdapter {
 	 */
 	@Override
 	public void render () {
-		// Con glClearColor y glClear podemos limpiar la pantalla y cambiarla por
-		// un fondo del color que le digamos. El color se lo decimos con los tres
-		// primeros parámetros, que son valores flotantes de tipo RGB entre 0 y 1.
-		Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
-		// Empezamos a mostrar cosas usando nuestro batch.
-		batch.begin();
-			// Podemos mostrar texto si sabemos decirle dónde queremos mostrarlo.
-			// Usamos el método draw() de BitmapFont indicando también cuál es
-			// el SpriteBatch que estamos usando.
-			font.draw(batch, "Hola mundo", 10, 60);
-			
-			// Podemos dibujar un Texture o un TextureRegion del mismo modo...
-			// Llamamos al SpriteBatch y le pasamos la imagen que vamos a mostrar.
-			batch.draw(region, 50, 80);
-			
-			// Para mostrar un Sprite la cosa es muy sencilla :)
-			miCoche.draw(batch);
-		batch.end();
+		renderizarJuego();
+		procesarEntrada();
 	}
-	
+
 	/**
 	 * Este método es llamado cuando el juego se cierre y con este método podemos
 	 * liberar recursos que no estemos utilizando. Debemos liberar manualmente
@@ -148,5 +124,115 @@ public class HolaGdxGame extends ApplicationAdapter {
 		// así que no deberíamos intentar dibujarla otra vez. Las consecuencias
 		// pueden ser impredecibles.
 		coche.dispose();
+	}
+	
+	/** Se encarga de renderizar el juego como vimos en el episodio 3. */
+
+	private void renderizarJuego() {
+		// Con glClearColor y glClear podemos limpiar la pantalla y cambiarla por
+		// un fondo del color que le digamos. El color se lo decimos con los tres
+		// primeros parámetros, que son valores flotantes de tipo RGB entre 0 y 1.
+		Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		// Empezamos a mostrar cosas usando nuestro batch.
+		batch.begin();
+			
+			// Para mostrar un Sprite la cosa es muy sencilla :)
+			miCoche.draw(batch);
+		batch.end();
+	}
+	
+	/** Se encarga de procesar la entrada como vimos em el episodio 4. */
+
+	private void procesarEntrada() {
+		entradaTeclado();
+		entradaRaton();
+		actualizarPosicionCoche();
+	}
+	
+	/** Procesa entrada por teclado. */
+
+	private void entradaTeclado() {
+		// Si se está moviendo porque hemos hecho clic no se puede interactuar.
+		if (debeMoverse)
+			return;
+		
+		boolean izda = Gdx.input.isKeyPressed(Input.Keys.A)
+				|| Gdx.input.isKeyPressed(Input.Keys.LEFT);
+		boolean dcha = Gdx.input.isKeyPressed(Input.Keys.D)
+				|| Gdx.input.isKeyPressed(Input.Keys.RIGHT);
+		boolean puedeMoverse = (izda != dcha);
+		if (puedeMoverse && dcha)
+			acelerar();
+		else if (puedeMoverse && izda)
+			marchaAtras();
+		else
+			frenarCoche();
+	}
+	
+	/** Procesa entrada por ratón. */
+	private void entradaRaton() {
+		// Determinamos si hay que iniciar un movimiento.
+		if (Gdx.input.isTouched()) {
+			debeMoverse = true;
+			objetivoX = Gdx.input.getX();
+			// Si tenemos que ir a la derecha, que lleguemos con el capó.
+			if (objetivoX > miCoche.getX())
+				objetivoX -= miCoche.getWidth();
+		}
+		
+		if (debeMoverse) {
+			float distRestante = objetivoX - miCoche.getX();
+			if (distRestante > 0)
+				acelerar();
+			else
+				marchaAtras();
+			debeMoverse = Math.abs(distRestante) > 10f;
+		} else {
+			frenarCoche();
+		}
+	}
+	
+	/** Intenta acelerar el coche si no tiene aceleración máxima. */
+
+	/** Acelera el coche si no está a tope ya. */
+	private void acelerar() {
+		if (aceleracion <= 240f) aceleracion += 60f;
+	}
+	
+	/** Lleva el coche marcha atrás. */
+
+	/** El coche avanza hacia atrás. */
+	private void marchaAtras() {
+		if (aceleracion >= -240f) aceleracion -= 40f;
+	}
+	
+	/** Se asegura que el coche esté quieto o lo frena si no lo está. */
+
+	/** Se asegura de que el coche esté quieto o lo frena si no lo está. */
+	private void frenarCoche() {
+		// Como no se puede mover, la aceleración es 0 y las fuerzas
+		// de rozamiento hacen que el coche se vaya frenando progresivamente.
+		aceleracion = 0;
+		// Como trabajamos con flotantes, tenemos que establecer un límite
+		// de seguridad ya que los cálculos nunca tendrán buena precisión.
+		if (Math.abs(velocidad) > 0.5f)
+			velocidad *= 0.95f;
+		else
+			velocidad = 0;
+	}
+	
+
+	/**
+	 * Actualizamos la posición del coche usando las fórmulas del MRUA.
+	 * v = v0 + at, x = x0 + vt + 0.5at² (revisen su libro de física...)
+	 */
+	private void actualizarPosicionCoche() {
+		float posicion = miCoche.getX();
+		float tiempo = Gdx.graphics.getDeltaTime();
+		velocidad += aceleracion * tiempo;
+		posicion += velocidad * tiempo + 0.5 * aceleracion * (tiempo * tiempo);
+		miCoche.setX(posicion);
 	}
 }
