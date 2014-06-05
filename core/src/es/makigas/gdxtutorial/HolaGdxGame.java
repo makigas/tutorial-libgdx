@@ -34,6 +34,8 @@ package es.makigas.gdxtutorial;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import es.makigas.gdxtutorial.inputhandler.PantallaAuto;
+
 /**
  * Clase principal. Es un Game, están diseñados para soportar varias
  * pantallas y disponen de un método (setScreen) para cambiar entre una
@@ -53,6 +55,7 @@ public class HolaGdxGame extends Game {
 	
 	public Pantalla coche;
 	public Pantalla animacion;
+	public Pantalla auto;
 
 	@Override
 	public void create() {
@@ -62,9 +65,10 @@ public class HolaGdxGame extends Game {
 		// Creamos las pantallas
 		coche = new PantallaCoche(this);
 		animacion = new PantallaAnimation(this);
+		auto = new PantallaAuto(this);
 		
 		// Hoy nos interesa esta pantalla.
-		setScreen(animacion);
+		setScreen(auto);
 	}
 
 }
