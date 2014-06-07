@@ -34,6 +34,7 @@ package es.makigas.gdxtutorial;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import es.makigas.gdxtutorial.camera.PantallaCamera;
 import es.makigas.gdxtutorial.inputhandler.PantallaAuto;
 
 /**
@@ -56,6 +57,7 @@ public class HolaGdxGame extends Game {
 	public Pantalla coche;
 	public Pantalla animacion;
 	public Pantalla auto;
+	public Pantalla camera;
 
 	@Override
 	public void create() {
@@ -66,9 +68,10 @@ public class HolaGdxGame extends Game {
 		coche = new PantallaCoche(this);
 		animacion = new PantallaAnimation(this);
 		auto = new PantallaAuto(this);
+		camera = new PantallaCamera(this);
 		
 		// Hoy nos interesa esta pantalla.
-		setScreen(auto);
+		setScreen(camera);
 	}
 
 }
