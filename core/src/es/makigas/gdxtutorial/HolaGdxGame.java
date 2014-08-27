@@ -37,6 +37,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import es.makigas.gdxtutorial.camera.PantallaCamera;
 import es.makigas.gdxtutorial.inputhandler.PantallaAuto;
 import es.makigas.gdxtutorial.scene2d.PantallaScene;
+import es.makigas.gdxtutorial.ui.PantallaUI;
 
 /**
  * Clase principal. Es un Game, están diseñados para soportar varias
@@ -60,6 +61,7 @@ public class HolaGdxGame extends Game {
 	public Pantalla auto;
 	public Pantalla camera;
 	public Pantalla scene;
+    public Pantalla ui;
 
 	@Override
 	public void create() {
@@ -72,8 +74,9 @@ public class HolaGdxGame extends Game {
 		auto = new PantallaAuto(this);
 		camera = new PantallaCamera(this);
 		scene = new PantallaScene(this);
+        ui = new PantallaUI(this);
 		
 		// Hoy nos interesa esta pantalla.
-		setScreen(scene);
+		setScreen(ui);
 	}
 }
